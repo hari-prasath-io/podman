@@ -45,7 +45,7 @@ jobs:
           IMAGE_TAG=${{ github.run_number }}
 
           podman build \
-            -f go.Dockerfile
+            -f go.Dockerfile \
             -t ghcr.io/${{ github.repository_owner }}/golang/${{ env.IMAGE_NAME }}:${IMAGE_TAG} \
             -t ghcr.io/${{ github.repository_owner }}/golang/${{ env.IMAGE_NAME }}:latest \
             .
