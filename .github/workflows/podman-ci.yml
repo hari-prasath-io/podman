@@ -18,6 +18,12 @@ jobs:
       - name: Checkout Source
         uses: actions/checkout@v4
 
+      - name: Show Repository Files
+        run: |
+          pwd
+          ls -la
+          find . -maxdepth 3 -type f
+        
       - name: Install Podman
         run: |
           sudo apt-get update
@@ -39,6 +45,7 @@ jobs:
           IMAGE_TAG=${{ github.run_number }}
 
           podman build \
+            -f go.Dockerfile
             -t ghcr.io/${{ github.repository_owner }}/golang/${{ env.IMAGE_NAME }}:${IMAGE_TAG} \
             -t ghcr.io/${{ github.repository_owner }}/golang/${{ env.IMAGE_NAME }}:latest \
             .
