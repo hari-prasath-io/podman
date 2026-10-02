@@ -1,38 +1,58 @@
-name: Podman Run
+name: Podman Build and Push
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: podman
 
 jobs:
-  test:
-    name: First GitHub Workflow Execution
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Print message
-        run: echo "Hello from GitHub Actions!"
+      - name: Checkout Source
+        uses: actions/checkout@v4
 
-      - name: Show current directory
-        run: pwd
-
-      - name: List files
-        run: ls -la
-      
-      - name: Check runner resources
+      - name: Install Podman
         run: |
-          echo "===== OS ====="
-          uname -a
+          sudo apt-get update
+          sudo apt-get install -y podman
 
-          echo "===== CPU ====="
-          echo "CPU cores: $(nproc)"
-          lscpu | grep -E 'Model name|CPU\(s\)'
+      - name: Verify Podman
+        run: |
+          podman --version
 
-          echo "===== RAM ====="
-          free -h
+      - name: Login to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
+          podman login ghcr.io \
+            -u "${{ github.actor }}" \
+            --password-stdin
 
-          echo "===== DISK ====="
-          df -h
+      - name: Build Image
+        run: |
+          IMAGE_TAG=${{ github.run_number }}
 
-          echo "===== RUNNER ====="
-          echo "OS: $RUNNER_OS"
-          echo "Architecture: $RUNNER_ARCH"
+          podman build \
+            -t ghcr.io/${{ github.repository_owner }}/golang/${{ env.IMAGE_NAME }}:${IMAGE_TAG} \
+            -t ghcr.io/${{ github.repository_owner }}/golang/${{ env.IMAGE_NAME }}:latest \
+            .
+
+      - name: Push Version Tag
+        run: |
+          IMAGE_TAG=${{ github.run_number }}
+
+          podman push \
+            ghcr.io/${{ github.repository_owner }}/golang/${{ env.IMAGE_NAME }}:${IMAGE_TAG}
+
+      - name: Push Latest Tag
+        run: |
+          podman push \
+            ghcr.io/${{ github.repository_owner }}/golang/${{ env.IMAGE_NAME }}:latest
